@@ -17,7 +17,7 @@
        vm_size: __vm_size__
        vm_type_disk: __vm_type_disk__
        admin_user_vm: __admin_user_vm__
-       public_key_ssh: __public_key_ssh__
+       public_key_ssh: __public_key_ssh__       
        offer_vm: __offer_vm__
        publisher_vm: __publisher_vm__
        sku_vm: __sku_vm__
@@ -104,3 +104,14 @@
               publisher: "{{ publisher_vm }}"
               sku: "{{ sku_vm }}"
               version: "{{ version_vm }}"
+
+            
+              
+
+           
+         
+
+
+
+           
+                  
