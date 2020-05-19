@@ -1,0 +1,106 @@
+# Simple VM
+---
+   - hosts: localhost
+
+     vars:
+       resource_group: __resourceGroupName__
+       location: __location__
+       public_ip_web: __public_ip_web__
+       allocation_method: __allocation_method__
+       vnet_name: __vnet_name__
+       address_prefixes_cidr_vnet: __address_prefixes_cidr_vnet__
+       subnetfe_name: __subnetfe_name__
+       address_prefix_cidr_subnetfe: __address_prefix_cidr_subnetfe__
+       nsg_web_name: __nsg_web_name__
+       nic_name_web: __nic_name_web__
+       vm_name_web: __vm_name_web__
+       vm_size: __vm_size__
+       vm_type_disk: __vm_type_disk__
+       admin_user_vm: __admin_user_vm__
+       public_key_ssh: __public_key_ssh__
+       offer_vm: __offer_vm__
+       publisher_vm: __publisher_vm__
+       sku_vm: __sku_vm__
+       version_vm: __version_vm__
+
+     tasks:
+         # Deploiement du resource groupe
+       - name: Installation du ressource groupe
+         azure_rm_resourcegroup:
+           name: "{{ resource_group }}"
+           location: "{{ location }}"
+
+         # Deploiement de IP Publique
+       - name: Installation de l' IP publique
+         azure_rm_publicipaddress:
+            resource_group: "{{ resource_group }}"
+            name: "{{ public_ip_web }}"
+            allocation_method: "{{ allocation_method }}"
+
+         # Deploiement de Vnet
+       - name: Installation du virtual network
+         azure_rm_virtualnetwork:
+           name: "{{ vnet_name }}"
+           resource_group: "{{ resource_group }}"
+           address_prefixes_cidr: "{{ address_prefixes_cidr_vnet }}"
+
+         # Deploiement du Subnet
+       - name: Installation du subnet
+         azure_rm_subnet:
+           name: "{{ subnetfe_name }}"
+           virtual_network_name: "{{ vnet_name }}"
+           resource_group: "{{ resource_group }}"
+           address_prefix_cidr: "{{ address_prefix_cidr_subnetfe }}"
+
+         # Deploiement d'une NSG + deux regles
+       - name: Creation de la NSG plus les regles
+         azure_rm_securitygroup:
+           resource_group: "{{ resource_group }}"
+           name: "{{ nsg_web_name }}"
+           purge_rules: yes
+           rules:
+              - name: AllowsSSH
+                protocol: Tcp
+                destination_port_range: 22
+                access: Allow
+                priority: 100
+                direction: Inbound
+
+              - name: AllowHTTP
+                protocol: Tcp
+                destination_port_range: 80
+                access: Allow
+                priority: 110
+                direction: Inbound
+
+         # deploiement de la NIC
+       - name: Creation de la NIC
+         azure_rm_networkinterface:
+            name: "{{ nic_name_web }}"
+            resource_group: "{{ resource_group }}"
+            virtual_network: "{{ vnet_name }}"
+            subnet_name: "{{ subnetfe_name }}"
+            security_group: "{{ nsg_web_name }}"
+            ip_configurations:
+            - name: ipconfig1
+              public_ip_address_name: "{{ public_ip_web }}"
+              primary: True
+
+         # deploiement de la VM
+       - name: Installation de la VM
+         azure_rm_virtualmachine:
+            name: "{{ vm_name_web }}"
+            resource_group: "{{ resource_group }}"
+            vm_size: "{{ vm_size }}"
+            managed_disk_type: "{{ vm_type_disk }}"
+            admin_username: "{{ admin_user_vm }}"
+            ssh_password_enabled: false
+            ssh_public_keys:
+            - path: "/home/{{ admin_user_vm }}/.ssh/authorized_keys"
+              key_data: "{{ public_key_ssh }}"
+            network_interfaces: "{{ nic_name_web }}"
+            image:
+              offer: "{{ offer_vm }}"
+              publisher: "{{ publisher_vm }}"
+              sku: "{{ sku_vm }}"
+              version: "{{ version_vm }}"
