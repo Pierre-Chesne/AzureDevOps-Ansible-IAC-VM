@@ -1,5 +1,5 @@
 # Simple VM
-# last test 20/05/2020
+# last test 20/05/2020 Orange
 ---
    - hosts: localhost
 
